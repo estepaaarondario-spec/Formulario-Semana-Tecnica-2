@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Formulario de proyectos</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>📋</text></svg>">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#fff3f8;--card:#fff;--text:#d6336c;--muted:#e0679a;--line:#f06595;--accent:#e64980;--accent-t:#fff;--danger:#c2255c;color-scheme:light}
+#bg{position:fixed;inset:-25%;z-index:0;transform:rotate(-12deg);display:flex;flex-wrap:wrap;gap:30px 44px;align-content:flex-start;pointer-events:none;overflow:hidden}
+#bg span{font:700 1.5rem/1 Georgia,"Times New Roman",serif;color:#f8c8dc;white-space:nowrap}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;margin:8px 0 4px}
+p.sub{color:var(--muted);margin:0 0 20px}
+.card{background:#fff;border:2px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 4px 14px rgba(240,101,149,.15)}
+label{display:block;font-weight:600;margin:0 0 6px}
+input,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--text);font:inherit}
+input::placeholder,textarea::placeholder{color:#f1a6c3}
+input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:flex;gap:8px;margin-bottom:8px}
+.row input:first-child{flex:1}
+.row input.qty{width:80px;flex:none}
+.field{margin-bottom:18px}
+button{font:inherit;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);padding:9px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-t);border-color:var(--accent);font-weight:600;width:100%;padding:12px}
+button.x{padding:9px 12px;color:var(--danger)}
+.hint{color:var(--muted);font-size:.85rem;margin-top:4px}
+.msg{padding:10px 12px;border-radius:10px;margin-bottom:14px;background:var(--bg);border:1px solid var(--line)}
+.entry h3{margin:0 0 6px;font-size:1.1rem}
+.entry ul{margin:6px 0;padding-left:20px}
+.entry .meta{color:var(--muted);font-size:.9rem}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.center{text-align:center;margin:14px 0 0}
+button.link{border:none;padding:6px;color:var(--muted);text-decoration:underline;font-size:.9rem}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.actions button{background:#fff;border:2px solid var(--line);color:var(--text);font-weight:600}
+.h2{font-size:1.1rem;margin:0 0 8px}
+ul.tot{margin:0;padding-left:20px}
+.entry h3{margin:0 0 6px;font-size:1.1rem}
+.entry ul{margin:6px 0;padding-left:20px}
+.entry .meta{color:var(--muted);font-size:.9rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="bg" aria-hidden="true"></div>
+<main>
+<div id="pub">
+  <h1>📋 Proyectos: ¿qué necesitan?</h1>
+  <p class="sub">Completá el formulario con el nombre de tu proyecto, quiénes lo integran y los materiales que necesitan.</p>
+
+  <form class="card" id="f" onsubmit="return false">
+    <div class="field">
+      <label for="proj">Nombre del proyecto</label>
+      <input id="proj" maxlength="100" placeholder="Ej: Maqueta del sistema solar">
+    </div>
+    <div class="field">
+      <label>Integrantes</label>
+      <div id="members"></div>
+      <button type="button" id="addM">+ Agregar integrante</button>
+    </div>
+    <div class="field">
+      <label>Materiales que necesitan</label>
+      <div id="mats"></div>
+      <button type="button" id="addT">+ Agregar material</button>
+      <div class="hint">Podés indicar la cantidad en el cuadro chico.</div>
+    </div>
+    <div class="field">
+      <label for="notes">Observaciones (opcional)</label>
+      <textarea id="notes" rows="3" maxlength="500"></textarea>
+    </div>
+    <div id="err" class="msg" hidden></div>
+    <button class="primary" id="send">Enviar</button>
+  </form>
+  <p class="center"><button type="button" class="link" id="adminBtn">🔒 Modo admin</button></p>
+</div>
+
+<section id="login" hidden>
+  <h1>🔒 Modo admin</h1>
+  <p class="sub">Ingresá la contraseña para ver qué necesita cada proyecto.</p>
+  <div class="card">
+    <div class="field"><label for="pw">Contraseña</label><input id="pw" type="password" autocomplete="current-password"></div>
+    <div id="lerr" class="msg" hidden></div>
+    <button class="primary" id="go">Entrar</button>
+    <p class="center"><button type="button" class="link" id="back1">← Volver al formulario</button></p>
+  </div>
+</section>
+
+<section id="panel" hidden>
+  <h1>📊 Panel del docente</h1>
+  <p class="sub" id="pcount">Cargando…</p>
+  <div class="actions">
+    <button type="button" id="csv">⬇ Descargar CSV</button>
+    <button type="button" id="back2">Ver formulario</button>
+    <button type="button" id="out">Cerrar sesión</button>
+  </div>
+  <div class="card"><h2 class="h2">🧾 Materiales en total</h2><ul id="totals" class="tot"></ul></div>
+  <h2 class="h2" style="margin:18px 0 10px">Proyectos</h2>
+  <div id="list"></div>
+</section>
+</main>
+<script type="module">
+/* ============ CONFIGURACIÓN (ver README) ============
+   Pegá acá los datos de tu proyecto de Firebase y el correo del docente. */
+const firebaseConfig = {
+  apiKey: "AIzaSyDwpQH8SxVSP32QPTrNN79m5X4v6CaROMY",
+  authDomain: "formulario-7777b.firebaseapp.com",
+  projectId: "formulario-7777b",
+  appId: "1:494037255152:web:06bac547fd2a81ac6a1335"
+};
+/* ===================================================== */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const $=id=>document.getElementById(id);
+const ADMIN_EMAIL="admin@formulario.com"; // correo inventado, no hace falta que exista
+const configured=!firebaseConfig.apiKey.startsWith('TU_');
+let db=null,auth=null,unsub=null,rows=[];
+if(configured){const app=initializeApp(firebaseConfig);db=getFirestore(app);auth=getAuth(app);}
+
+{const P=['¡Vos podés!','Un paso a la vez','Juntos llegamos más lejos','Creá, soñá, hacelo','Equivocarse es aprender','Cada gran proyecto empieza con una idea','Confiá en vos','Tu esfuerzo vale la pena','Nada es imposible','Brillá con tu proyecto','Lo importante es empezar','Con ganas todo se puede'];const b=$('bg');for(let i=0;i<140;i++){const s=document.createElement('span');s.textContent=P[(i*5+Math.floor(i/12))%P.length];b.appendChild(s);}}
+
+const esc=s=>{const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;};
+function addRow(box,ph,withQty){
+  const r=document.createElement('div');r.className='row';
+  const i=document.createElement('input');i.placeholder=ph;i.maxLength=80;r.appendChild(i);
+  if(withQty){const q=document.createElement('input');q.className='qty';q.placeholder='Cant.';q.maxLength=10;r.appendChild(q);}
+  const b=document.createElement('button');b.type='button';b.className='x';b.textContent='✕';b.title='Quitar';
+  b.onclick=()=>{if(box.children.length>1)r.remove();else r.querySelectorAll('input').forEach(x=>x.value='');};
+  r.appendChild(b);box.appendChild(r);
+}
+function reset(){
+  $('proj').value='';$('notes').value='';$('members').innerHTML='';$('mats').innerHTML='';
+  addRow($('members'),'Nombre y apellido');addRow($('mats'),'Ej: cartulina, cola vinílica…',true);
+}
+reset();
+$('addM').onclick=()=>addRow($('members'),'Nombre y apellido');
+$('addT').onclick=()=>addRow($('mats'),'Material',true);
+function show(el,msg,ok){el.hidden=false;el.textContent=msg;el.style.color=ok?'var(--text)':'var(--danger)';}
+
+/* ---------- envío del alumno ---------- */
+$('send').onclick=async()=>{
+  const name=$('proj').value.trim(),notes=$('notes').value.trim();
+  const members=[...$('members').querySelectorAll('.row')].map(r=>r.querySelector('input').value.trim()).filter(Boolean);
+  const materials=[...$('mats').querySelectorAll('.row')].map(r=>{const n=r.querySelectorAll('input');return{item:n[0].value.trim(),qty:n[1].value.trim()}}).filter(m=>m.item);
+  const err=$('err');
+  if(!name) return show(err,'Falta el nombre del proyecto.');
+  if(!members.length) return show(err,'Agregá al menos un integrante.');
+  if(!materials.length) return show(err,'Agregá al menos un material.');
+  if(!configured){
+    const txt='Proyecto: '+name+'\nIntegrantes: '+members.join(', ')+'\nMateriales:\n'+materials.map(m=>'- '+m.item+(m.qty?' ('+m.qty+')':'')).join('\n')+(notes?'\nObservaciones: '+notes:'');
+    try{await navigator.clipboard.writeText(txt);}catch(e){}
+    return show(err,'El envío no está configurado todavía. Copié tu pedido al portapapeles para que se lo pases al docente.',true);
+  }
+  $('send').disabled=true;
+  try{
+    await addDoc(collection(db,'proyectos'),{name,members,materials,notes,createdAt:Date.now()});
+    reset();show(err,'¡Listo! Tu proyecto fue enviado ✅',true);
+  }catch(e){show(err,'No se pudo enviar. Revisá tu conexión y probá de nuevo.');}
+  $('send').disabled=false;
+};
+
+/* ---------- navegación ---------- */
+function go(v){$('pub').hidden=v!=='pub';$('login').hidden=v!=='login';$('panel').hidden=v!=='panel';window.scrollTo(0,0);}
+$('adminBtn').onclick=()=>{
+  if(!configured){go('login');return show($('lerr'),'Falta configurar Firebase (ver README).');}
+  go(auth.currentUser?'panel':'login');
+};
+$('back1').onclick=$('back2').onclick=()=>go('pub');
+
+/* ---------- login admin ---------- */
+$('go').onclick=async()=>{
+  if(!configured) return show($('lerr'),'Falta configurar Firebase (ver README).');
+  try{await signInWithEmailAndPassword(auth,ADMIN_EMAIL,$('pw').value);$('pw').value='';$('lerr').hidden=true;}
+  catch(e){show($('lerr'),'Contraseña incorrecta.');}
+};
+$('out').onclick=async()=>{await signOut(auth);go('pub');};
+if(configured) onAuthStateChanged(auth,u=>{
+  if(unsub){unsub();unsub=null;}
+  if(u){
+    go('panel');
+    unsub=onSnapshot(query(collection(db,'proyectos'),orderBy('createdAt','desc')),s=>{rows=s.docs.map(d=>({id:d.id,...d.data()}));render();},
+      ()=>{$('pcount').textContent='Esta cuenta no tiene permiso para ver los proyectos. Revisá las reglas y el correo admin (README).';});
+  }else{rows=[];}
+});
+
+/* ---------- panel ---------- */
+function render(){
+  $('pcount').textContent=rows.length?rows.length+(rows.length===1?' proyecto enviado':' proyectos enviados'):'Todavía no hay proyectos enviados.';
+  // totales por material
+  const T={};
+  rows.forEach(p=>(p.materials||[]).forEach(m=>{
+    const k=m.item.toLowerCase();const t=T[k]||(T[k]={item:m.item,sum:0,allNum:true,qtys:[],n:0});
+    t.n++;const q=m.qty.trim();
+    if(q===''){t.sum+=1;}else if(!isNaN(Number(q.replace(',','.')))){t.sum+=Number(q.replace(',','.'));}else{t.allNum=false;t.qtys.push(q);}
+  }));
+  $('totals').innerHTML=Object.values(T).sort((a,b)=>a.item.localeCompare(b.item)).map(t=>
+    '<li><b>'+esc(t.item)+'</b>: '+(t.allNum?t.sum:t.sum+' + '+esc(t.qtys.join(', ')))+' <span class="meta">('+t.n+(t.n===1?' proyecto':' proyectos')+')</span></li>').join('')||'<li class="meta">Sin materiales todavía.</li>';
+  // lista
+  const L=$('list');L.innerHTML='';
+  rows.forEach(p=>{
+    const c=document.createElement('div');c.className='card entry';
+    c.innerHTML='<h3>'+esc(p.name)+'</h3><div class="meta">👥 '+esc((p.members||[]).join(', '))+'</div><ul>'+
+      (p.materials||[]).map(m=>'<li>'+esc(m.item)+(m.qty?' — '+esc(m.qty):'')+'</li>').join('')+'</ul>'+
+      (p.notes?'<div class="meta">📝 '+esc(p.notes)+'</div>':'');
+    const b=document.createElement('button');b.className='x';b.textContent='Eliminar';
+    b.onclick=async()=>{if(confirm('¿Eliminar este proyecto?'))try{await deleteDoc(doc(db,'proyectos',p.id));}catch(e){alert('No se pudo eliminar.');}};
+    c.appendChild(b);L.appendChild(c);
+  });
+}
+$('csv').onclick=()=>{
+  const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+  const lines=[['Proyecto','Integrantes','Materiales','Observaciones','Fecha'].map(q).join(',')];
+  rows.forEach(p=>lines.push([p.name,(p.members||[]).join('; '),(p.materials||[]).map(m=>m.item+(m.qty?' ('+m.qty+')':'')).join('; '),p.notes,new Date(p.createdAt).toLocaleString('es-AR')].map(q).join(',')));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}));
+  a.download='proyectos.csv';a.click();URL.revokeObjectURL(a.href);
+};
+</script>
+</body>
+</html>
